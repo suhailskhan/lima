@@ -20,7 +20,7 @@ env:
 jobs:
   lints:
     name: "Lints"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
         fetch-depth: 1
     - uses: actions/setup-go@v5
       with:
-        go-version: 1.22.x
+        go-version: 1.23.x
     - name: Install protoc
       run: |
         sudo apt-get update
@@ -38,7 +38,7 @@ jobs:
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v6.1.0
       with:
-        version: v1.59.1
+        version: v1.60.1
         args: --verbose --timeout=10m
     - name: Run yamllint
       run: yamllint .
@@ -66,13 +66,13 @@ jobs:
 
   unit:
     name: "Unit tests"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         # For non-Homebrew we have to support an old release of Go
-        go-version: ["1.21.x", "1.22.x"]
+        go-version: ["1.22.x", "1.23.x"]
     steps:
     - name: Install test dependencies
       run: |
@@ -127,7 +127,7 @@ jobs:
         fetch-depth: 1
     - uses: actions/setup-go@v5
       with:
-        go-version: 1.22.x
+        go-version: 1.23.x
     - name: Unit tests
       run: go test -v ./...
     - name: Make
@@ -156,7 +156,7 @@ jobs:
         fetch-depth: 1
     - uses: actions/setup-go@v5
       with:
-        go-version: 1.22.x
+        go-version: 1.23.x
     - name: Cache ~/Library/Caches/lima/download
       uses: actions/cache@v4
       with:
@@ -184,6 +184,9 @@ jobs:
         time brew install qemu bash coreutils curl jq
     - name: "Show cache"
       run: ./hack/debug-cache.sh
+    - name: "Inject `no_timer_check` to kernel cmdline"
+      # workaround to https://github.com/lima-vm/lima/issues/84
+      run: ./hack/inject-cmdline-to-template.sh templates/default.yaml no_timer_check
     - name: "Test default.yaml"
       uses: nick-invision/retry@v3
       with:
@@ -204,7 +207,7 @@ jobs:
   # as they seem more stable than macOS instances.
   integration-linux:
     name: Integration tests (on Linux)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -213,7 +216,7 @@ jobs:
         - alpine.yaml
         - debian.yaml
         - fedora.yaml
-        # - archlinux.yaml temporarily disabled because it breaks CI
+        - archlinux.yaml
         - opensuse.yaml
         - experimental/net-user-v2.yaml
         - experimental/9p.yaml
@@ -226,7 +229,7 @@ jobs:
         fetch-depth: 1
     - uses: actions/setup-go@v5
       with:
-        go-version: 1.22.x
+        go-version: 1.23.x
     - id: path_for_hashFiles
       # It seems that `hashFiles` cannot use `..` as a path component, so generate a normalized path here.
       run: echo "NORMALIZED=$(realpath --relative-to=$PWD examples/${{ matrix.template }})" >> "$GITHUB_OUTPUT"
@@ -269,7 +272,7 @@ jobs:
 
   colima:
     name: Colima
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     strategy:
       matrix:
@@ -282,7 +285,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
     - uses: actions/setup-go@v5
       with:
-        go-version: 1.22.x
+        go-version: 1.23.x
     - uses: actions/cache@v4
       with:
         path: ~/.cache/lima/download
@@ -327,7 +330,7 @@ jobs:
         fetch-depth: 1
     - uses: actions/setup-go@v5
       with:
-        go-version: 1.22.x
+        go-version: 1.23.x
     - name: Cache ~/Library/Caches/lima/download
       uses: actions/cache@v4
       with:
@@ -356,6 +359,9 @@ jobs:
     - name: Unit test (pkg/networks) with socket_vmnet
       # Set -count=1 to disable cache
       run: go test -v -count=1 ./pkg/networks/...
+    - name: "Inject `no_timer_check` to kernel cmdline"
+      # workaround to https://github.com/lima-vm/lima/issues/84
+      run: ./hack/inject-cmdline-to-template.sh templates/vmnet.yaml no_timer_check
     - name: Test socket_vmnet
       uses: nick-invision/retry@v3
       with:
@@ -379,7 +385,7 @@ jobs:
         fetch-depth: 0
     - uses: actions/setup-go@v5
       with:
-        go-version: 1.22.x
+        go-version: 1.23.x
     - name: Cache ~/Library/Caches/lima/download
       uses: actions/cache@v4
       with:
@@ -413,7 +419,7 @@ jobs:
         fetch-depth: 1
     - uses: actions/setup-go@v5
       with:
-        go-version: 1.22.x
+        go-version: 1.23.x
     - id: path_for_hashFiles
       # It seems that `hashFiles` cannot use `..` as a path component, so generate a normalized path here.
       run: echo "NORMALIZED=$(realpath examples/${{ matrix.template }})" >> "$GITHUB_OUTPUT"
